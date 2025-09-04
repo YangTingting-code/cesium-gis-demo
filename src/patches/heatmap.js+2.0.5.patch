@@ -1,0 +1,14 @@
+diff --git a/node_modules/heatmap.js/build/heatmap.js b/node_modules/heatmap.js/build/heatmap.js
+index 1234567..abcdefg 100644
+--- a/node_modules/heatmap.js/build/heatmap.js
++++ b/node_modules/heatmap.js/build/heatmap.js
+@@ -435,7 +435,8 @@ var Canvas2dRenderer = (function Canvas2dRendererClosure() {
+       width = this.shadowCanvas.width;
+       height = this.shadowCanvas.height;
+       if (!imgData) {
+-        imgData = shadowCtx.createImageData(width, height);
++        var raw = shadowCtx.createImageData(width, height);
++        imgData = new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height);
+       }
+       var imgDataData = imgData.data;
+       for (var i = 3; i < imgDataData.length; i += 4) {

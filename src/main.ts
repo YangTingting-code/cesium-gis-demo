@@ -1,5 +1,16 @@
-import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
-
-createApp(App).mount('#app')
+import { createApp } from 'vue';
+import App from './App.vue';
+import DataVVue3 from '@kjgl77/datav-vue3';
+import './assets/scss/style.scss';
+import './assets/icon/iconfont.css';
+import router from './router/index';
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
+import { createPinia } from 'pinia';
+const pinia = createPinia();
+const app = createApp(App);
+app.use(ElementPlus);
+app.use(DataVVue3);
+app.use(router);
+app.use(pinia);
+app.mount('#app');

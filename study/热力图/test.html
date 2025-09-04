@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>HeadMap.js</title>
+  <!--Framework-->
+  <script src="js/heatmap.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+  <h1>HeadMap</h1>
+  <div class="heatmap" style="height: 600px;width: 500px;"></div>
+  <script type="text/javascript">
+    // minimal heatmap instance configuration
+    var heatmapInstance = h337.create({
+      // only container is required, the rest will be defaults
+      //只需要一个container，也就是最终要绘制图形的dom节点，其他都默认
+      container: document.querySelector('.heatmap')
+    });
+
+    // now generate some random data
+    var points = [];
+    var max = 0;
+    var width = 840;
+    var height = 400;
+    var len = 200;
+
+    while (len--) {
+      var val = Math.floor(Math.random() * 100);
+      max = Math.max(max, val);
+      var point = {//这里可以自定义
+        x: Math.floor(Math.random() * width),
+        y: Math.floor(Math.random() * height),
+        value: val
+      };
+      points.push(point);
+    }
+    // heatmap data format
+    var data = {
+      max: max,//所有数据中的最大值
+      data: points//最终要展示的数据
+    };
+    // if you have a set of datapoints always use setData instead of addData
+    // for data initialization
+    heatmapInstance.setData(data);
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>纯JS热力图</title>
+</head>
+
+<body>
+  <canvas id="heatmapCanvas" width="400" height="300" style="border:1px solid #000"></canvas>
+
+  <script>
+    const canvas = document.getElementById('heatmapCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // 1. 初始化密度矩阵
+    const density = Array.from({ length: height }, () => Array(width).fill(0));
+
+    // 2. 点数据（测试用）
+    const points = [
+      { x: 50, y: 50, value: 1 },
+      { x: 200, y: 100, value: 2 },
+      { x: 300, y: 200, value: 3 }
+    ];
+
+    // 高斯扩散函数
+    function addPointWithGaussian(density, px, py, value, radius = 30, sigma = 10) {
+      for (let y = py - radius; y <= py + radius; y++) {
+        for (let x = px - radius; x <= px + radius; x++) {
+          if (x >= 0 && x < width && y >= 0 && y < height) {
+            const dx = x - px;
+            const dy = y - py;
+            const d2 = dx * dx + dy * dy;
+            const weight = Math.exp(-d2 / (2 * sigma * sigma));
+            density[y][x] += value * weight;
+          }
+        }
+      }
+    }
+
+    // 把所有点扩散进矩阵
+    points.forEach(p => {
+      addPointWithGaussian(density, Math.floor(p.x), Math.floor(p.y), p.value);
+    });
+
+    // 3. 找最大值（用于归一化）
+    let maxDensity = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (density[y][x] > maxDensity) maxDensity = density[y][x];
+      }
+    }
+
+    // 5️⃣ 创建渐变色条 (蓝 → 青 → 绿 → 黄 → 红)
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = 256;
+    colorCanvas.height = 1;
+    const colorCtx = colorCanvas.getContext('2d');
+    const gradient = colorCtx.createLinearGradient(0, 0, 256, 0);
+    gradient.addColorStop(0.0, "blue");
+    gradient.addColorStop(0.25, "cyan");
+    gradient.addColorStop(0.5, "green");
+    gradient.addColorStop(0.75, "yellow");
+    gradient.addColorStop(1.0, "red");
+    colorCtx.fillStyle = gradient;
+    colorCtx.fillRect(0, 0, 256, 1);
+    const colorData = colorCtx.getImageData(0, 0, 256, 1).data;
+
+    // 6️⃣ 用 ImageData 绘制热力图
+    const imgData = ctx.createImageData(width, height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const value = density[y][x] / maxDensity; // 归一化到 [0,1]
+        const idx = (y * width + x) * 4;
+        const cIdx = Math.floor(value * 255) * 4;
+
+        imgData.data[idx] = colorData[cIdx];       // R
+        imgData.data[idx + 1] = colorData[cIdx + 1]; // G
+        imgData.data[idx + 2] = colorData[cIdx + 2]; // B
+        imgData.data[idx + 3] = Math.floor(255 * value); // A
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  </script>
+</body>
+
+</html>

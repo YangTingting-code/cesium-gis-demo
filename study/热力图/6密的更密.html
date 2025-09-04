@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>纯 JS 自适应热力图</title>
+</head>
+
+<body>
+  <script>
+    (function () {
+      // 1️⃣ 创建 Canvas
+      var canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 400;
+      canvas.style.border = "1px solid #000";
+      document.body.appendChild(canvas);
+      var ctx = canvas.getContext('2d');
+
+      // 2️⃣ 渐变色条
+      var gradCanvas = document.createElement('canvas');
+      gradCanvas.width = 256; gradCanvas.height = 1;
+      var gctx = gradCanvas.getContext('2d');
+      var gradient = gctx.createLinearGradient(0, 0, 256, 0);
+      gradient.addColorStop(0, "blue");
+      gradient.addColorStop(0.25, "cyan");
+      gradient.addColorStop(0.5, "green");
+      gradient.addColorStop(0.75, "yellow");
+      gradient.addColorStop(1, "red");
+      gctx.fillStyle = gradient;
+      gctx.fillRect(0, 0, 256, 1);
+      var colorData = gctx.getImageData(0, 0, 256, 1).data;
+
+      // 3️⃣ 高斯圆生成
+      function createBaseGaussian(radius) {
+        var size = radius * 2;
+        var c = document.createElement('canvas');
+        c.width = c.height = size;
+        var cctx = c.getContext('2d');
+        var grad = cctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+        grad.addColorStop(0, 'rgba(0,0,0,1)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        cctx.fillStyle = grad;
+        cctx.fillRect(0, 0, size, size);
+        return c;
+      }
+
+      var baseCircle = createBaseGaussian(20);
+      var points = [];
+
+      // 4️⃣ 生成随机点
+      function generateRandomPoints(count) {
+        count = count || 2;
+        for (var i = 0; i < count; i++) {
+          points.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            value: Math.random() * 0.5 + 0.5,
+            currentRadius: 5,
+            maxRadius: 50 + Math.random() * 30,
+            alpha: 1
+          });
+        }
+      }
+
+      // 5️⃣ 绘制灰度热力图
+      function drawGrayHeatmap() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'lighter';
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+          if (p.alpha <= 0) continue;
+          var radius = Math.floor(p.currentRadius + p.value * 20);
+          ctx.globalAlpha = 0.2 * p.alpha;
+          ctx.drawImage(baseCircle, p.x - radius, p.y - radius, radius * 2, radius * 2);
+        }
+      }
+
+      // 6️⃣ 应用颜色渐变
+      function applyColorGradient() {
+        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var data = img.data;
+        for (var i = 0; i < data.length; i += 4) {
+          var alpha = data[i + 3];
+          if (alpha > 0) {
+            var idx = Math.min(Math.floor(alpha / 255 * 255), 255) * 4;
+            data[i] = colorData[idx];
+            data[i + 1] = colorData[idx + 1];
+            data[i + 2] = colorData[idx + 2];
+            data[i + 3] = alpha;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+      }
+
+      // 7️⃣ 动画循环
+      function animate() {
+        generateRandomPoints(2);
+        for (var i = points.length - 1; i >= 0; i--) {
+          var p = points[i];
+          p.currentRadius += 0.5;
+          p.alpha -= 0.008;
+          if (p.alpha <= 0) points.splice(i, 1);
+        }
+        drawGrayHeatmap();
+        applyColorGradient();
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
+  </script>
+</body>
+
+</html>

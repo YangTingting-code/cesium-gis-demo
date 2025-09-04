@@ -4,22 +4,46 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --open",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src --ext .vue,.js,.ts",
+    "format": "prettier --write src",
+    "postinstall": "patch-package",
+    "clean-vite": "node -e \"require('fs').rmSync('node_modules/.vite', {recursive:true, force:true})\""
   },
   "dependencies": {
-    "vue": "^3.5.18"
+    "@kjgl77/datav-vue3": "^1.7.4",
+    "@turf/turf": "^7.2.0",
+    "axios": "^1.11.0",
+    "cesium": "^1.132.0",
+    "cesium-heatmap-es6": "^0.8.0",
+    "coordtransform": "^2.1.2",
+    "echarts": "^6.0.0",
+    "element-plus": "^2.10.7",
+    "heatmap.js": "^2.0.5",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.33.0",
+    "@typescript-eslint/parser": "^8.40.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.7.0",
+    "core-js": "^3.45.1",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.4.0",
+    "globals": "^16.3.0",
+    "node-localstorage": "^3.0.5",
+    "patch-package": "^8.0.0",
     "prettier": "^3.6.2",
+    "sass-embedded": "^1.90.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
+    "vue-eslint-parser": "^10.2.0",
     "vue-tsc": "^3.0.5"
   }
 }

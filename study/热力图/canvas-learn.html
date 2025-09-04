@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>动态创建 Canvas</title>
+</head>
+
+<body>
+  <script>
+    // 1️⃣ 创建 canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 300;
+    canvas.style.border = "1px solid #000";
+
+    // 2️⃣ 插入到页面
+    document.body.appendChild(canvas);
+
+    // 3️⃣ 获取绘图上下文
+    const ctx = canvas.getContext('2d');
+
+    // 4️⃣ 测试点数据
+    const points = [
+      { x: 50, y: 50, value: 1 },
+      { x: 200, y: 100, value: 2 },
+      { x: 300, y: 200, value: 3 }
+    ];
+
+    console.log("点数据准备好了", points);
+
+    // 5️⃣ 简单绘制点，确认位置
+    /* points.forEach(p => {
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }) */
+
+    // 创建二维数组，初始化为 0
+    const width = canvas.width
+    const height = canvas.height
+    // 把画布划分300行400列 
+    const density = Array.from({ length: height }, () => Array(width).fill(0));
+
+    // 把点映射到矩阵 
+    points.forEach(p => {
+      const x = Math.floor(p.x)
+      const y = Math.floor(p.y)
+      // 确保点在画布范围内
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        density[y][x] += p.value; // 在对应像素位置加上权重
+      }
+    })
+    console.log("密度矩阵", density);
+
+    function addPointWithGaussian(density, px, py, value, radius = 30, sigma = 10) {
+      const height = density.length;
+      const width = density[0].length;
+
+      // 遍历周围像素
+      for (let y = py - radius; y <= py + radius; y++) {
+        for (let x = px - radius; x <= px + radius; x++) {
+          if (x >= 0 && x < width && y >= 0 && y < height) {
+            const dx = x - px;
+            const dy = y - py;
+            const d2 = dx * dx + dy * dy;
+
+            // 高斯函数计算权重
+            const weight = Math.exp(-d2 / (2 * sigma * sigma));
+
+            // 把这个点的影响加到密度矩阵里
+            density[y][x] += value * weight;
+            console.log('影响', density[y][x]);
+
+          }
+        }
+      }
+    }
+
+    // 使用示例， 高斯扩散点的影响
+    points.forEach(p => {
+      addPointWithGaussian(density, Math.floor(p.x), Math.floor(p.y), p.value);
+    })
+
+    /*  1️⃣ 归一化
+  热度值大小不一，我们要先把它映射到 [0,1] 区间 */
+    // 找最大值
+    let maxDensity = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (density[y][x] > maxDensity) {
+          maxDensity = density[y][x];
+        }
+      }
+    }
+
+    /* 2️⃣ 定义颜色映射函数
+    我们可以先用简单的 “蓝 → 青 → 绿 → 黄 → 红” 渐变 */
+    // 👉 以后我们可以用更漂亮的渐变色表（比如 d3-scale），但现在先用简单版。
+    function getColor(value) {
+      // value ∈ [0,1]
+      const r = Math.floor(255 * value);         // 越热越红
+      const g = Math.floor(255 * (1 - value));   // 冷的时候偏绿
+      const b = Math.floor(255 * (1 - value));   // 冷的时候偏蓝
+      const a = value > 0 ? 0.6 : 0;             // 有热度才显示
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /* 3️⃣ 遍历矩阵绘制像素
+用 fillRect 给每个像素着色： */
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const value = density[y][x] / maxDensity; // 归一化
+        ctx.fillStyle = getColor(value);
+        ctx.fillRect(x, y, 1, 1); // 画 1 像素
+      }
+    }
+
+  </script>
+</body>
+
+</html>

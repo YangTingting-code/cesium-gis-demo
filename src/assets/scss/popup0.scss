@@ -1,0 +1,99 @@
+.divlabel-container,
+.divlabel-container::before,
+.divlabel-container::after {
+  //把容器锚在左下角
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  //去除这个鼠标在弹窗上面的样式是提示用户可以点击
+  //禁止鼠标事件 鼠标移到上面不会触发hover/click 
+  pointer-events: none;
+  cursor: pointer;
+}
+
+//用于生成边框动画
+.animate-maker-border,
+.animate-maker-border::before,
+.animate-maker-border::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+//宽150 高30 的矩形区域 
+.animate-maker-border {
+  width: 150px;
+  height: 30px;
+  margin: 0;
+  color: #69ca62;
+  // 内阴影 模拟边框效果 绿色半透明
+  box-shadow: inset 0 0 0 1px rgba(105, 202, 98, 0.5);
+}
+
+//边框动画效果
+.animate-maker-border::before,
+.animate-maker-border::after {
+  content: '';
+  z-index: 10;
+  margin: -5%;
+  box-shadow: inset 0 0 0 2px;
+  // clipMe是动态改变裁剪区域 让边框好像“流动/闪动”
+  animation: clipMe 8s linear infinite;
+}
+
+//两个伪元素错开4s 形成循环的跑马灯效果
+.animate-maker-border::before {
+  animation-delay: -4s;
+}
+
+//动画关键帧
+@keyframes clipMe {
+
+  0%,
+  100% {
+    clip: rect(0px, 170px, 2px, 0px);
+  }
+
+  25% {
+    clip: rect(0px, 2px, 47px, 0px);
+  }
+
+  50% {
+    clip: rect(45px, 170px, 47px, 0px);
+  }
+
+  75% {
+    clip: rect(0px, 170px, 47px, 45px);
+  }
+}
+
+/**
+clip: rect(top, right, bottom, left) —— 定义矩形的可见裁剪区域。
+
+动画分为 4 段：
+
+上边一条横线（0%/100%）
+
+左边一条竖线（25%）
+
+下边一条横线（50%）
+
+右边一条竖线（75%）
+
+配合 8s linear infinite，边框就像 光圈在矩形周围绕圈跑 */
+
+.animate-marker__text {
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-weight: bolder;
+  user-select: none;
+  cursor: pointer;
+  background: rgba(0, 173, 181, 0.32);
+}

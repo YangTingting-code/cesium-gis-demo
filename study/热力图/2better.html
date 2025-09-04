@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>动态发光热力图</title>
+</head>
+
+<body>
+  <script>
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 400;
+    canvas.style.border = '1px solid #000';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    // 渐变色条（蓝→青→绿→黄→红）
+    const gradCanvas = document.createElement('canvas');
+    gradCanvas.width = 256; gradCanvas.height = 1;
+    const gctx = gradCanvas.getContext('2d');
+    const gradient = gctx.createLinearGradient(0, 0, 256, 0);
+    gradient.addColorStop(0, "blue");
+    gradient.addColorStop(0.25, "cyan");
+    gradient.addColorStop(0.5, "green");
+    gradient.addColorStop(0.75, "yellow");
+    gradient.addColorStop(1, "red");
+    gctx.fillStyle = gradient;
+    gctx.fillRect(0, 0, 256, 1);
+    const colorData = gctx.getImageData(0, 0, 256, 1).data;
+
+    // 高斯圆生成函数
+    function createGaussianCircle(radius) {
+      const size = radius * 2;
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const cctx = c.getContext('2d');
+      const grad = cctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+      grad.addColorStop(0, 'rgba(0,0,0,1)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      cctx.fillStyle = grad;
+      cctx.fillRect(0, 0, size, size);
+      return c;
+    }
+
+    // 点数据，每个点有 x, y, 权重 value, 动态半径 currentRadius
+    let points = [];
+
+    // 点击添加点
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      points.push({ x, y, value: 1, currentRadius: 0, maxRadius: 50 });
+    });
+
+    // 绘制灰度热力图
+    function drawGrayHeatmap() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'lighter';
+      points.forEach(p => {
+        const circle = createGaussianCircle(Math.floor(p.currentRadius));
+        ctx.globalAlpha = 0.2 * p.value;
+        ctx.drawImage(circle, p.x - p.currentRadius, p.y - p.currentRadius);
+      });
+    }
+
+    // alpha 转颜色
+    function applyColorGradient() {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = img.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha > 0) {
+          const idx = Math.min(Math.floor(alpha / 255 * 255), 255) * 4;
+          data[i] = colorData[idx];
+          data[i + 1] = colorData[idx + 1];
+          data[i + 2] = colorData[idx + 2];
+          data[i + 3] = alpha;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    // 动画循环
+    function animate() {
+      // 扩散半径
+      points.forEach(p => {
+        if (p.currentRadius < p.maxRadius) {
+          p.currentRadius += 1; // 扩散速度可调
+        }
+      });
+
+      drawGrayHeatmap();
+      applyColorGradient();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+
+</html>

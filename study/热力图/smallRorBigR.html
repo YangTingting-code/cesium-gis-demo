@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>热力图半径对比</title>
+</head>
+
+<body>
+  <script>
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;  // 左右各画一幅热力图
+    canvas.height = 300;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width / 2; // 每幅图宽度
+    const height = canvas.height;
+
+    // 测试点
+    const points = [
+      { x: 50, y: 50, value: 1 },
+      { x: 150, y: 100, value: 2 },
+      { x: 300, y: 200, value: 3 }
+    ];
+
+    // 创建颜色渐变条
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = 256; colorCanvas.height = 1;
+    const colorCtx = colorCanvas.getContext('2d');
+    const gradient = colorCtx.createLinearGradient(0, 0, 256, 0);
+    gradient.addColorStop(0.0, "blue");
+    gradient.addColorStop(0.25, "cyan");
+    gradient.addColorStop(0.5, "green");
+    gradient.addColorStop(0.75, "yellow");
+    gradient.addColorStop(1.0, "red");
+    colorCtx.fillStyle = gradient;
+    colorCtx.fillRect(0, 0, 256, 1);
+    const colorData = colorCtx.getImageData(0, 0, 256, 1).data;
+
+    // 高斯扩散函数
+    function addPointGaussian(density, px, py, value, radius = 30, sigma = 10) {
+      const h = density.length;
+      const w = density[0].length;
+      for (let y = py - radius; y <= py + radius; y++) {
+        for (let x = px - radius; x <= px + radius; x++) {
+          if (x >= 0 && x < w && y >= 0 && y < h) {
+            const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy;
+            density[y][x] += value * Math.exp(-d2 / (2 * sigma * sigma));
+          }
+        }
+      }
+    }
+
+    // 绘制函数
+    function drawHeatmap(offsetX, radius, sigma) {
+      const density = Array.from({ length: height }, () => Array(width).fill(0));
+      points.forEach(p => addPointGaussian(density, Math.floor(p.x), Math.floor(p.y), p.value, radius, sigma));
+      let maxDensity = 0;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (density[y][x] > maxDensity) maxDensity = density[y][x];
+        }
+      }
+      const imgData = ctx.createImageData(width, height);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const value = density[y][x] / maxDensity;
+          const idx = (y * width + x) * 4;
+          const cIdx = Math.floor(value * 255) * 4;
+          imgData.data[idx] = colorData[cIdx];
+          imgData.data[idx + 1] = colorData[cIdx + 1];
+          imgData.data[idx + 2] = colorData[cIdx + 2];
+          imgData.data[idx + 3] = Math.floor(255 * value);
+        }
+      }
+      ctx.putImageData(imgData, offsetX, 0);
+    }
+
+    // 左边：小半径
+    drawHeatmap(0, 30, 10);
+
+    // 右边：大半径
+    drawHeatmap(width, 80, 25);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+@use './variables' as *;
+// @import './variables';
+
+// 图标
+.iconfont {
+  font-size: 20px !important;
+  color: #5cd9e8;
+}
+
+@each $key, $value in $flex-jc {
+  .jc-#{$key} {
+    justify-content: $value;
+  }
+}
+
+// @each $typekey, $type in $spacing-types {
+
+//.m-1
+
+//.mx-1
+
+//.mt-1
+
+//.m margin:0
+
+// }
+
+//margin or padding,m or p
+@each $typeKey, $type in $spacing-types {
+  //.m-1
+  @each $sizeKey, $size in $spacing-sizes {
+    .#{$typeKey}-#{$sizeKey} {
+      #{$type}: $size * $spacing-base-size;
+    }
+  }
+
+  //.mx-1  or  .my-1
+  @each $sizeKey, $size in $spacing-sizes {
+    .#{$typeKey}x-#{$sizeKey} {
+      #{$type}-left: $size * $spacing-base-size;
+      #{$type}-right: $size * $spacing-base-size;
+    }
+
+    .#{$typeKey}y-#{$sizeKey} {
+      #{$type}-top: $size * $spacing-base-size;
+      #{$type}-bottom: $size * $spacing-base-size;
+    }
+  }
+
+  //mt-1 or mr-1 or mb-1 or ml-1
+
+  @each $sizeKey, $size in $spacing-sizes {
+    @each $directionKey, $direction in $spacing-directions {
+      .#{$typeKey}#{$directionKey}-#{$sizeKey} {
+        #{$type}-#{$direction}: $size * $spacing-base-size;
+      }
+    }
+  }
+
+  .#{$typeKey} {
+    #{$type}: 0;
+  }
+}

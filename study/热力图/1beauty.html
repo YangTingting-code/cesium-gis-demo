@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>原生 JS Heatmap 模拟</title>
+</head>
+
+<body>
+  <script>
+    const canvas = document.createElement('canvas');
+    canvas.width = 500;
+    canvas.height = 400;
+    canvas.style.border = '1px solid #000';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    // 1️⃣ 创建高斯圆
+    function createGaussianCircle(radius) {
+      const size = radius * 2;
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const cctx = c.getContext('2d');
+      const gradient = cctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+      gradient.addColorStop(0, 'rgba(0,0,0,1)');
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      cctx.fillStyle = gradient;
+      cctx.fillRect(0, 0, size, size);
+      return c;
+    }
+
+    const radius = 50;
+    const gaussianCircle = createGaussianCircle(radius);
+
+    // 2️⃣ 定义点数据
+    let points = [
+      { x: 100, y: 100, value: 1 },
+      { x: 300, y: 200, value: 2 },
+      { x: 400, y: 350, value: 1.5 }
+    ];
+
+    // 3️⃣ 绘制灰度热力图
+    function drawGrayHeatmap() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'lighter'; // 叠加效果
+      points.forEach(p => {
+        ctx.globalAlpha = 0.2 * p.value; // 控制每个点权重
+        ctx.drawImage(gaussianCircle, p.x - radius, p.y - radius);
+      });
+    }
+
+    // 4️⃣ 颜色映射函数（渐变色表）
+    function applyColorGradient() {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = img.data;
+
+      // 创建渐变条
+      const gradCanvas = document.createElement('canvas');
+      gradCanvas.width = 256; gradCanvas.height = 1;
+      const gctx = gradCanvas.getContext('2d');
+      const gradient = gctx.createLinearGradient(0, 0, 256, 0);
+      gradient.addColorStop(0, "blue");
+      gradient.addColorStop(0.25, "cyan");
+      gradient.addColorStop(0.5, "green");
+      gradient.addColorStop(0.75, "yellow");
+      gradient.addColorStop(1, "red");
+      gctx.fillStyle = gradient;
+      gctx.fillRect(0, 0, 256, 1);
+      const colorData = gctx.getImageData(0, 0, 256, 1).data;
+
+      // alpha 转颜色
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha > 0) {
+          const idx = Math.min(Math.floor(alpha / 255 * 255), 255) * 4;
+          data[i] = colorData[idx];
+          data[i + 1] = colorData[idx + 1];
+          data[i + 2] = colorData[idx + 2];
+          data[i + 3] = alpha; // 保留原透明度
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    // 5️⃣ 绘制完整热力图
+    function drawHeatmap() {
+      drawGrayHeatmap();
+      applyColorGradient();
+    }
+
+    // 初始绘制
+    drawHeatmap();
+
+    // 6️⃣ 动态添加点（模拟实时更新）
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      points.push({ x, y, value: 1 });
+      drawHeatmap();
+    });
+  </script>
+</body>
+
+</html>

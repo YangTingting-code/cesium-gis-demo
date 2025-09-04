@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Cesium 3D 热力图（Canvas + Primitive）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 10;
+      background: rgba(255, 255, 255, .92);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: system-ui, Segoe UI, Arial, sans-serif;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, .15);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar label {
+      white-space: nowrap
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cesiumContainer"></div>
+
+  <div class="toolbar">
+    <label>最大高度(m)：<input id="maxHeight" type="range" min="50" max="1200" step="10" value="400"></label>
+    <span id="hLabel">400</span>
+    <button id="regen">重生随机热力</button>
+  </div>
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+  <script>
+    (function () {
+      // ===== 基本参数 =====
+      const GRID_W = 128;          // 热力与网格分辨率（列）
+      const GRID_H = 128;          // （行）。越大越细腻，但顶点更多
+      const RADIUS = 18;           // 热力扩散半径（像素）
+      const ALPHA_PER_POINT = 0.25;// 单点透明度（可被 value 放大）
+      let MAX_HEIGHT = 400;      // 立体最大高度（米）
+      const planeWidthMeters = 2000; // 东西尺寸（米）
+      const planeHeightMeters = 2000; // 南北尺寸（米）
+      const centerLon = 116.39139;    // 中心经度（示例：北京）
+      const centerLat = 39.9075;      // 中心纬度
+
+      // ===== 初始化 Cesium（不使用 Ion，避免 token）=====
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        imageryProvider: new Cesium.OpenStreetMapImageryProvider({ url: "https://a.tile.openstreetmap.org/" }),
+        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+        animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false,
+        selectionIndicator: false, infoBox: false, navigationHelpButton: false
+      });
+
+      // ===== 颜色查找表：蓝→红 =====
+      function createColorLUT() {
+        const c = document.createElement("canvas");
+        c.width = 256; c.height = 1;
+        const ctx = c.getContext("2d");
+        const g = ctx.createLinearGradient(0, 0, 256, 0);
+        g.addColorStop(0.00, "blue");
+        g.addColorStop(0.25, "cyan");
+        g.addColorStop(0.50, "green");
+        g.addColorStop(0.75, "yellow");
+        g.addColorStop(1.00, "red");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 1);
+        return ctx.getImageData(0, 0, 256, 1).data; // RGBA*256
+      }
+      const COLOR_LUT = createColorLUT();
+
+      // ===== 高斯圆（黑中心→透明边，用来“盖章”）=====
+      function createGaussianCircle(radius) {
+        const size = radius * 2;
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const ctx = c.getContext("2d");
+        const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+        grad.addColorStop(0, "rgba(0,0,0,1)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size);
+        return c;
+      }
+      const gaussianCircle = createGaussianCircle(RADIUS);
+
+      // ===== 随机点（可换成真实数据投影到画布）=====
+      function randomPoints(n = 120) {
+        const pts = [];
+        for (let i = 0; i < n; i++) {
+          pts.push({ x: Math.random() * GRID_W, y: Math.random() * GRID_H, value: 0.6 + Math.random() * 0.8 });
+        }
+        return pts;
+      }
+
+
+      // ===== 构建热力：返回 scalar(0..1) 与彩色纹理 Canvas =====
+      function buildHeatmap(points) {
+        // 灰度画布，alpha 累加
+        const gray = document.createElement("canvas");
+        gray.width = GRID_W; gray.height = GRID_H;
+        const gctx = gray.getContext("2d");
+        gctx.clearRect(0, 0, GRID_W, GRID_H);
+        gctx.globalCompositeOperation = "lighter";
+        points.forEach(p => {
+          gctx.globalAlpha = ALPHA_PER_POINT * p.value;
+          gctx.drawImage(gaussianCircle, p.x - RADIUS, p.y - RADIUS);
+        });
+
+        // === 用灰度计算 scalar（代替 alpha）===
+        const gImg = gctx.getImageData(0, 0, GRID_W, GRID_H);
+        const data = gImg.data;
+        const scalar = new Float32Array(GRID_W * GRID_H);
+        let maxGray = 0;
+
+        // 先算灰度值
+        for (let i = 0, si = 0; i < data.length; i += 4, si++) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          scalar[si] = gray;
+          if (gray > maxGray) maxGray = gray;
+        }
+        // 归一化
+        for (let si = 0; si < scalar.length; si++) {
+          scalar[si] = maxGray > 0 ? scalar[si] / maxGray : 0;
+        }
+
+        // 彩色 Canvas
+        const colorCanvas = document.createElement("canvas");
+        colorCanvas.width = GRID_W; colorCanvas.height = GRID_H;
+        const cctx = colorCanvas.getContext("2d");
+        const outImg = cctx.createImageData(GRID_W, GRID_H);
+        const out = outImg.data;
+        for (let si = 0; si < scalar.length; si++) {
+          const v = scalar[si];
+          const lut = Math.min(255, Math.floor(v * 255)) * 4;
+          const o = si * 4;
+          out[o] = COLOR_LUT[lut];
+          out[o + 1] = COLOR_LUT[lut + 1];
+          out[o + 2] = COLOR_LUT[lut + 2];
+          out[o + 3] = 255; // 不透明
+        }
+        cctx.putImageData(outImg, 0, 0);
+
+        return { scalar, colorCanvas };
+      }
+
+
+
+      // ===== 由标量构建网格几何（局部 ENU）=====
+      function buildGridGeometry(scalar, maxHeightMeters) {
+        const cols = GRID_W, rows = GRID_H;
+        const vertexCount = cols * rows;
+        const quadCount = (cols - 1) * (rows - 1);
+        const indexCount = quadCount * 6;
+
+        const pos = new Float64Array(vertexCount * 3);
+        const st = new Float32Array(vertexCount * 2);
+        const halfW = planeWidthMeters / 2, halfH = planeHeightMeters / 2;
+
+        let vi = 0, ti = 0;
+        for (let r = 0; r < rows; r++) {
+          const v = r / (rows - 1);
+          const y = -halfH + v * planeHeightMeters;  // 北正
+          for (let c = 0; c < cols; c++) {
+            const u = c / (cols - 1);
+            const x = -halfW + u * planeWidthMeters;  // 东正
+            const s = scalar[r * cols + c];           // 0..1
+            const z = s * maxHeightMeters;          // 向上抬高
+            pos[vi++] = x; pos[vi++] = y; pos[vi++] = z;
+            st[ti++] = u; st[ti++] = v;
+          }
+        }
+
+        const idx = new Uint32Array(indexCount);
+        let ii = 0;
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const i0 = r * cols + c, i1 = i0 + 1, i2 = i0 + cols, i3 = i2 + 1;
+            idx[ii++] = i0; idx[ii++] = i2; idx[ii++] = i1;
+            idx[ii++] = i1; idx[ii++] = i2; idx[ii++] = i3;
+          }
+        }
+
+        return new Cesium.Geometry({
+          attributes: {
+            position: new Cesium.GeometryAttribute({
+              componentDatatype: Cesium.ComponentDatatype.DOUBLE, // ✅ 重要
+              componentsPerAttribute: 3,
+              values: pos
+            }),
+            st: new Cesium.GeometryAttribute({
+              componentDatatype: Cesium.ComponentDatatype.FLOAT,  // ✅ 重要
+              componentsPerAttribute: 2,
+              values: st
+            })
+          },
+          indices: idx,
+          primitiveType: Cesium.PrimitiveType.TRIANGLES,
+          boundingSphere: Cesium.BoundingSphere.fromVertices(pos)
+        });
+      }
+
+      // ===== ENU → 世界的 modelMatrix（交给 Primitive）=====
+      function buildModelMatrix(lonDeg, latDeg, height = 0) {
+        return Cesium.Transforms.eastNorthUpToFixedFrame(
+          Cesium.Cartesian3.fromDegrees(lonDeg, latDeg, height)
+        );
+      }
+
+      // ===== 使用 Canvas 作为纹理的外观 =====
+      function createAppearance(canvasTex) {
+        return new Cesium.MaterialAppearance({
+          material: new Cesium.Material({
+            fabric: { type: "Image", uniforms: { image: canvasTex } }
+          }),
+          translucent: true,
+          faceForward: true,
+          closed: false
+        });
+      }
+
+      // ===== 生成 Primitive 并添加到场景 =====
+      let primitive = null;
+      function regenerate(points) {
+        const pts = points ?? randomPoints(140);
+        const heat = buildHeatmap(pts);
+        const geom = buildGridGeometry(heat.scalar, MAX_HEIGHT);
+
+        if (primitive) {
+          viewer.scene.primitives.remove(primitive);
+          primitive = null;
+        }
+
+        primitive = new Cesium.Primitive({
+          geometryInstances: new Cesium.GeometryInstance({ geometry: geom }),
+          appearance: createAppearance(heat.colorCanvas),
+          modelMatrix: buildModelMatrix(centerLon, centerLat, 0),
+          asynchronous: false
+        });
+        viewer.scene.primitives.add(primitive);
+
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(centerLon, centerLat, Math.max(planeWidthMeters, planeHeightMeters) * 1.2),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-55), roll: 0 },
+          duration: 0.8
+        });
+      }
+
+      // 初次生成
+      regenerate();
+
+      // ===== UI 交互 =====
+      const range = document.getElementById("maxHeight");
+      const hLabel = document.getElementById("hLabel");
+      range.addEventListener("input", () => {
+        MAX_HEIGHT = Number(range.value);
+        hLabel.textContent = MAX_HEIGHT;
+        regenerate(); // 重新生成几何（顶点高度需要重算）
+      });
+      document.getElementById("regen").addEventListener("click", () => regenerate());
+
+      // ===== 如果你有真实经纬度点（lon/lat/value），这样映射到画布 =====
+      // 1. 以矩形范围覆盖这块平面（近似换算，适合小区域）
+      // const lonSpan = (planeWidthMeters / (111320 * Math.cos(centerLat * Math.PI/180)));
+      // const latSpan = (planeHeightMeters / 111320);
+      // const lonMin = centerLon - lonSpan/2, lonMax = centerLon + lonSpan/2;
+      // const latMin = centerLat - latSpan/2, latMax = centerLat + latSpan/2;
+      // 2. 画布坐标（y 轴向下）：
+      // x = ( (lon - lonMin) / (lonMax - lonMin) ) * (GRID_W - 1)
+      // y = ( 1 - (lat - latMin)/(latMax - latMin) ) * (GRID_H - 1)
+    })();
+  </script>
+</body>
+
+</html>

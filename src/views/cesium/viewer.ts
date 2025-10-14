@@ -17,14 +17,44 @@ Cesium.Ion.defaultAccessToken =
 export async function createViewer(container: string | HTMLElement) {
   const viewer = new Cesium.Viewer(container, {
     terrain: Cesium.Terrain.fromWorldTerrain(),
+    timeline: true, //显示时间轴
+    animation: true, //显示播放控件
     infoBox: false, //是否显示信息框
+    baseLayerPicker: false,
+    sceneModePicker: false,
+    homeButton: false,
+    geocoder: false,
+    navigationHelpButton: false
   });
+  (viewer.timeline as any).makeLabel = function (time: any) {
+    return Cesium.JulianDate.toDate(time).toLocaleString('zh-CN', {
+      hour12: false,
+      timeZone: 'Asia/Shanghai'
+    })
+  }
+  viewer.animation.viewModel.timeFormatter = function (date: Cesium.JulianDate, viewModel: any) {
+    return Cesium.JulianDate.toDate(date).toLocaleString('zh-CN', {
+      hour12: false,
+      timeZone: 'Asia/Shanghai'
+    })
+  }
+  // as any).makeLabel = function (time: any) {
+  //   return Cesium.JulianDate.toDate(time).toLocaleString('zh-CN', {
+  //     hour12: false,
+  //     timeZone: 'Asia/Shanghai'
+  //   })
+  // }
+
+  // 隐藏版权信息
+  viewer._cesiumWidget._creditContainer.style.display = "none"; //存在
+
 
   viewer.entities.add(area);
   const line3D = await createLine3D(cartographic);
   viewer.entities.add(line3D);
   // await drawPolygon(viewer)
   const center = PolygonCenter(outlinePolygon);
+
 
   viewer.camera.setView({
     destination: Cesium.Cartesian3.fromDegrees(

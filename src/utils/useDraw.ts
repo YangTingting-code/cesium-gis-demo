@@ -1,10 +1,12 @@
-import { ref, nextTick } from 'vue';
+import {
+  ref,
+  // nextTick
+} from 'vue';
 
 export default function useDraw() {
-  // const appRef = ref();
   //修改
-  const appRef = ref<HTMLElement>()
-  const timer = ref(0)
+  const appRef = ref<HTMLElement>();
+  const timer = ref(0);
   //移除
   /* const scale = {
     // 字符串1，配合transfrom使用
@@ -20,13 +22,13 @@ export default function useDraw() {
       (window.innerWidth / window.innerHeight).toFixed(5)
     );
     //新增
-    let scaleWidth: string
-    let scaleHeight: string
+    let scaleWidth: string;
+    let scaleHeight: string;
 
     if (currentRate > baseRate) {
       //修改
-      scaleWidth = (window.innerHeight / baseHeight).toString()
-      scaleHeight = (window.innerHeight / baseHeight).toString()
+      scaleWidth = (window.innerHeight / baseHeight).toString();
+      scaleHeight = (window.innerHeight / baseHeight).toString();
       /* //当前宽更宽，按照高适配
       scale.width = (window.innerHeight / baseHeight).toString();
       scale.height = (window.innerHeight / baseHeight).toString();
@@ -35,8 +37,8 @@ export default function useDraw() {
     } else {
       //修改
       // 当前屏幕更高，按宽度缩放
-      scaleWidth = (window.innerWidth / baseWidth).toString()
-      scaleHeight = (window.innerWidth / baseWidth).toString()
+      scaleWidth = (window.innerWidth / baseWidth).toString();
+      scaleHeight = (window.innerWidth / baseWidth).toString();
       /* scale.width = (window.innerWidth / baseWidth).toString();
       scale.height = (window.innerWidth / baseWidth).toString();
       //计算
@@ -44,14 +46,14 @@ export default function useDraw() {
     }
     //新增
     if (appRef.value) {
-      appRef.value.style.transform = `scale(${scaleWidth}, ${scaleHeight}) translate(-50%, -50%)`
-      appRef.value.style.transformOrigin = 'left top'
+      appRef.value.style.transform = `scale(${scaleWidth}, ${scaleHeight}) translate(-50%, -50%)`;
+      appRef.value.style.transformOrigin = 'left top';
     }
     //新增
     // 关键：通知 element-plus 重新计算交互区域
-    nextTick(() => {
+    /* nextTick(() => {
       window.dispatchEvent(new Event('resize'))
-    })
+    }) */
   };
   //重新绘制
   const resize = () => {

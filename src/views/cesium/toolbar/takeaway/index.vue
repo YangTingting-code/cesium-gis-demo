@@ -1,0 +1,332 @@
+<template>
+  <div v-show="viewerRef">
+    <!-- 控制按钮 -->
+    <div 
+      class="toggle-btn"
+      :class="{open:sidebarOpen}"
+      @mouseenter="isBtnHover = true"
+      @mouseleave="isBtnHover = false"
+      @click="sidebarOpen = !sidebarOpen"
+    >
+      <span>{{ sidebarOpen ? '关闭' : '查看骑手轨迹' }}</span>
+    </div>
+    <!-- 滑动条 -->
+    <div
+      class="side-bar"
+    >
+      <div 
+        :class="{open:sidebarOpen, glow: isBtnHover }"
+        
+        class="takeaway-panel"
+      >
+        <button @click="playAnimation">
+          开始
+        </button>
+        <button @click="pauseAnimation">
+          暂停
+        </button>
+        <button @click="resumeAnimation">
+          继续
+        </button>
+        <button @click="serviceClear">
+          清除
+        </button>
+        <button @click="followRider">
+          视线跟随
+        </button>
+        <button @click="removeFllow">
+          取消跟随
+        </button>
+        <div
+          v-if="animationState"
+          class="progress-info"
+        >
+          进度: {{ (animationState.currentProgress * 100).toFixed(1) }}%
+          <!-- 时间: {{ animationState.elapsedTime.toFixed(1) }}s / {{ animationState.totalDuration }}s -->
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, onMounted, inject, watch } from 'vue'
+import type { Ref } from 'vue'
+import {SceneStateManager} from './service/SceneStateManager'
+import {useSceneStore} from './store/sceneStore'
+// import {useOrderStore} from '@/views/rightPanel/top/store/orderStore'
+
+import * as Cesium from 'cesium'
+
+interface CesiumInjection {
+  viewerRef: Ref<Cesium.Viewer | undefined>,
+  tilesetRef: Ref<Cesium.Cesium3DTileset | undefined>,
+  isReady: Ref<boolean>
+}
+
+let sceneStateManager : SceneStateManager
+let isFollow = false
+//管理订单面板状态
+const sceneStore = useSceneStore()
+
+const sidebarOpen = ref(false)
+const isBtnHover = ref(false)
+
+const { viewerRef, isReady } = inject<CesiumInjection>('cesium')!
+
+const animationState = ref<any>(null)
+
+watch(
+  [viewerRef, isReady],
+  async ([vRef, ready]) => {
+    if (ready && vRef) {
+      await initializeServices(vRef)
+    }
+  }
+)
+
+/**
+ * 初始化服务
+ */
+async function initializeServices(viewer: Cesium.Viewer) {
+  sceneStateManager = new SceneStateManager(viewer)
+  sceneStore.setManager(sceneStateManager) //保存到pinia store 方便订单面板管理
+  // await sceneStateManager.initialize() //?不要立马initialize吧？这个时候都没有数据
+
+}
+
+/**
+ * 开始骑手动画
+ */
+async function startRiderAnimation() {
+  
+  if (!viewerRef.value) {
+    console.error('服务未初始化')
+    return
+  }
+
+  try {
+    let services = sceneStateManager?.getServices()
+    const data = sceneStateManager.getData()
+    
+    if(!services || !data) return 
+    
+    let {animationService,pointService,pathService} = services
+    const {orderStepSegments,combinedOrder, order0StartIso} = data
+
+    if (!pointService || !pathService || !animationService){
+      console.log('重新创建')
+      sceneStateManager.initServices()
+      services = sceneStateManager.getServices()
+      animationService = services.animationService
+      pointService = services.pointService
+      pathService = services.pathService
+    }
+
+    if (!combinedOrder || !order0StartIso || !orderStepSegments) return
+    
+    // // 设置动画数据 一次性把数据库里面所有的订单数据设置了
+    animationService!.setAnimationData(combinedOrder, orderStepSegments)
+
+    // 绘制起点终点 , 并注册和起点终点有关的鼠标（点击/移动）事件
+    await pointService!.drawCombinedStops() // 见下一条
+  
+    //骑手初始化 
+    pathService!.createRiderModel()
+
+    // 开始动画
+    animationService!.startAnimation(combinedOrder.duration, order0StartIso)
+
+    // followRider() //手动让相机相机跟随 通知弹窗隐藏
+    
+    localStorage.setItem('isPath','true') //点击开始绘制 在本地存入 "已绘制"
+
+    console.log('骑手动画启动成功')
+    
+  } catch (error) {
+    console.error('启动骑手动画失败:', error)
+  }
+}
+
+// 动画控制方法
+const playAnimation = () => {
+  console.log('启动动画前 PathService 实例是否复用？', sceneStateManager.getServices().pathService)
+
+  startRiderAnimation()
+  //取消订单面板轮询
+  sceneStateManager.clearInterval()
+  //订单面板状态重置
+  sceneStateManager.resetOrderControlStatus()
+}
+
+const pauseAnimation = () => {
+  const {animationService} = sceneStateManager.getServices()
+  if(animationService)
+    animationService.pauseAnimation()
+  updateAnimationState()
+}
+
+const resumeAnimation = () => {
+  const {animationService} = sceneStateManager.getServices()
+  if(animationService)
+    animationService.resumeAnimation()
+  updateAnimationState()
+}
+
+const followRider = ()=>{
+  if(isFollow) return //已经跟随就不再重复设置
+  isFollow = true
+  const {pointService,pathService} = sceneStateManager.getServices()
+  if(pointService && pathService){
+    pointService.hide() //视线跟随的时候隐藏所有弹窗
+    pathService.followRider(true)
+  }
+}
+const removeFllow = ()=>{
+  if(!isFollow) return //已经跟随就不再重复设置
+  isFollow = false
+  const {pointService,pathService} = sceneStateManager.getServices()
+  if(pointService && pathService){
+    pointService.hide() //视线跟随的时候隐藏所有弹窗
+    pathService.removeFollow()
+  }
+}
+
+
+// 更新动画状态
+const updateAnimationState = () => {
+  const {animationService} = sceneStateManager.getServices()
+  if(animationService)
+    animationState.value = animationService.getAnimationState()
+}
+
+const serviceClear = ()=>{
+  sceneStateManager.clear()
+}
+
+// 定期更新状态
+onMounted(() => {
+  if(sceneStateManager)
+    setInterval(updateAnimationState, 100)
+})
+
+// 组件卸载时清理资源
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  sceneStateManager.clear()
+})
+
+</script>
+
+<style lang="scss" scoped>
+.toggle-btn{
+  position: absolute;
+  z-index: 1;
+  writing-mode: vertical-rl;
+  width: 2.5rem;
+  height: 9rem;
+  top: 17rem;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: rgba(57, 147, 138, 0.85);
+  border-radius: 0 .5rem .5rem 0;
+  transition: all 0.5s ease;
+  &:hover{
+    box-shadow: 
+      0 0 1rem rgba(0,255,255,0.6),
+      0 0 1.5rem rgba(0,255,255,0.4);
+    transform: translateX(0.5rem) scale(1.1);
+  }
+  &.open{
+    left: 16rem;
+    width: 2rem;
+    height: 5rem;
+    font-size: 0.8rem;
+    border-radius: 0 .5rem .5rem 0;
+  }
+ 
+}
+
+.side-bar{
+  position: absolute;
+  z-index: 1;
+  .takeaway-panel{
+    position: absolute;
+    left:-15rem;
+    top: 16.5rem;
+    width: 15rem;
+    height: 8rem;
+    opacity: 0;
+    transition: all 0.5s ease;
+    border-radius: 1rem;
+    background: 
+      linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%),
+      rgba(40, 150, 135, 0.35); // 更冷调的青绿色底色
+    backdrop-filter: blur(1.125rem);
+    -webkit-backdrop-filter: blur(.75rem);
+    box-shadow: 
+      0 .25rem .75rem rgba(0, 0, 0, 0.25),   // 外层阴影
+      inset 0 .0625rem .125rem rgba(255, 255, 255, 0.2); // 内发光
+    button{
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    &.open{
+      transform: translateX(105%);
+      opacity: 1;
+      &.glow{
+        box-shadow:
+          0 .25rem 1.25rem 0rem rgba(0, 255, 200, 0.6), // 第一个0rem 表示左右偏移为0 第二个0.25rem 表示向下偏移0.25rem 第三个1.25rem表示光晕 0rem表示光晕偏移量
+          inset 0 .0625rem .1875rem rgba(255, 255, 255, 0.3); //内部白色阴影 高光凹陷效果
+        transform: translateX(102%) scale(1.05);
+      }
+    }
+  }
+}
+
+.takeaway-store {
+  position: relative;
+}
+
+.animation-controls {
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+  
+  button {
+    margin: 2px;
+    padding: 5px 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    
+    &:hover {
+      background: #45a049;
+    }
+  }
+  
+  .speed-control {
+    margin-top: 10px;
+    color: white;
+    
+    label {
+      margin-right: 5px;
+    }
+  }
+  
+  .progress-info {
+    margin-top: 10px;
+    color: white;
+    font-size: 14px;
+  }
+}
+</style>

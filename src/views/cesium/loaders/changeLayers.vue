@@ -20,7 +20,7 @@
       class="layer-list"
       @click.stop="selectLayer"
     >
-      <h3 class="mx-3 my-2">
+      <h3 class="layer">
         图层
       </h3>
       <div class="mapbox-list">
@@ -149,33 +149,36 @@ function selectLayer(e: MouseEvent) {
 
 <style scoped lang="scss">
 .layer-control {
-  background-color: pink;
-  border-radius: 5px;
+  border-radius: .3125rem;
   transition: 0.3s all ease;
   //发光效果
   &.glow {
-    box-shadow: 0 0 0px 1px rgb(189, 236, 248);
+    box-shadow: 0 0 0rem .0625rem rgb(189, 236, 248);
   }
   &.orangeBorder {
-    box-shadow: 0 0 0px 1px orange;
+    box-shadow: 0 0 0rem .0625rem orange;
   }
   .icon {
-    height: 33px;
-    width: 33px;
+    height: 2.5rem;
+    width: 2.5rem;
     background-size: cover;
-    border-radius: 5px;
+    border-radius: .3125rem;
     background-image: url('../assets/mapboxLayersPic/mapbox-navigation-night.png');
   }
   .layer-list {
     position: absolute;
-    top: 40px;
-    left: -170px;
-    width: 240px;
-    height: 225px;
+    top: 3rem;
+    // left: -10.625rem;
+    right: 0px;
+    width: 15rem;
+    height: 14.5rem;
     background-color: rgba(38, 38, 38, 0.75);
-    border-radius: 5px;
+    border-radius: .3125rem;
     h3 {
       color: white;
+    }
+    .layer{
+      margin:.6rem .8rem;
     }
     .mapbox-list {
       display: flex;
@@ -184,7 +187,7 @@ function selectLayer(e: MouseEvent) {
         //active时btn和文字样式不一样
         &.active {
           button {
-            border: double 4px rgb(189, 236, 248);
+            border: double .25rem rgb(189, 236, 248);
           }
           span {
             color: rgb(189, 236, 248);
@@ -193,24 +196,24 @@ function selectLayer(e: MouseEvent) {
         display: flex;
         justify-content: center;
         align-items: top;
-        margin-bottom: 1px;
-        width: 80px;
-        height: 90px;
+        margin-bottom: .0625rem;
+        width: 5rem;
+        height: 5.625rem;
         // background-color: pink;
         flex-wrap: wrap;
         cursor: pointer;
         button {
-          width: 60px;
-          height: 60px;
+          width: 3.75rem;
+          height: 3.75rem;
           // background-image: url('../assets/mapboxLayersPic/mapbox-navigation-night.png');
           background-size: cover;
-          border-radius: 5px;
-          border: 2px solid transparent;
+          border-radius: .3125rem;
+          border: .125rem solid transparent;
           transition: all 0.2s ease;
         }
         &:hover button {
           border-color: #fff; // 白色边框
-          box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.8); // 白色发光描边
+          box-shadow: 0 0 .5rem .125rem rgba(255, 255, 255, 0.8); // 白色发光描边
           background-color: rgba(255, 255, 255, 0.1); // 可选浅背景增强层次
         }
         // 关键部分：当 button hover，span 添加下划线
@@ -218,10 +221,10 @@ function selectLayer(e: MouseEvent) {
           text-decoration: underline;
         }
         span {
-          font-size: 12px;
+          font-size: .75rem;
           color: white;
           position: relative;
-          top: -3px;
+          top: -0.1875rem;
         }
       }
     }

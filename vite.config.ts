@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  assetsInclude: ['**/*.glb', '**/*.gltf'], //新增 为了能够识别三维模型
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -15,6 +16,16 @@ export default defineConfig({
         target: 'http://t4.tianditu.com',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/tianditu/, '')
+      },
+      '/api/baidu': {
+        target: 'https://api.map.baidu.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/baidu/, ''),
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('代理请求:', req.url)
+          })
+        }
       }
     }
   },
@@ -27,3 +38,4 @@ export default defineConfig({
     include: ['heatmap.js']
   }
 })
+

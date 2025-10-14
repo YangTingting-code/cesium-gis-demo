@@ -1,152 +1,166 @@
-#index {
-  position: absolute;
-  width: 1920px;
-  height: 1080px;
+.screen-wrapper {
+  /* 填充整个屏幕 */
+  position: relative; // 不需要 absolute + transform
+  width: 100vw;
+  height: 100vh;
+  background: url('../pageBg.png') center/cover no-repeat;
+  border: 1px solid yellow; // 调试边框
 
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  // 设置变换原点为左上角
-  transform-origin: left top;
-  // background-color: pink;
-
-  .bg {
+  #index {
+    position: relative;
     width: 100%;
     height: 100%;
-    background: url('../pageBg.png');
-    //完全覆盖
-    background-size: cover;
-    //水平垂直居中
-    background-position: center center;
-    padding: 16px 16px 0 16px;
-  }
+    border: 2px solid red;
 
-  .host-body {
-    display: flex;
-    flex-direction: column;
-
-    .decoration {
-      // 第一行
-      .dv-dec-10,
-      .dv-dec-10-s {
-        width: 32%;
-        height: 5px;
-      }
-
-      .dv-dec-10-s {
-        transform: rotateY(180deg);
-      }
-
-      .dv-dec-8 {
-        width: 200px;
-        height: 50px;
-      }
-
-      .title {
-        display: flex;
-        width: 500px;
-        height: 50px;
-        justify-content: center;
-        align-items: flex-end;
-        position: relative;
-
-        .title-text {
-          position: absolute;
-          color: white;
-          font-size: 24px;
-        }
-
-        .dv-dec-6 {
-          position: absolute;
-          width: 250px;
-          height: 8px;
-          bottom: -30px;
-        }
-      }
-
-      // 第二行
-      .aside-width {
-        width: 40%;
-        color: white;
-        // background-color: pink;
-      }
-
-      //左-平行四边形
-      .react-left {
-        //并且有这个类名的设置长度500px
-        &.react-l-l {
-          width: 500px;
-          text-align: left;
-        }
-
-        font-size: 18px;
-        width: 200px;
-        height: 50px;
-        //文字居中
-        line-height: 50px;
-        text-align: center;
-        transform: skewX(45deg);
-        background-color: #0f1325;
-
-        .react-before {
-          position: absolute;
-          left: -24px;
-          top: 0;
-          height: 50px;
-          width: 50px;
-          background-color: #0f1325;
-          transform: skewX(-45deg);
-        }
-
-        //文字单独倾斜回去
-        .text {
-          display: inline-block;
-          transform: skewX(-45deg);
-        }
-      }
-
-      //右-平行四边形
-      .react-right {
-        &.react-r-l {
-          width: 500px;
-          text-align: right;
-        }
-
-        position: relative;
-        width: 200px;
-        height: 50px;
-        line-height: 50px;
-        background-color: #0f1325;
-        font-size: 18px;
-        transform: skewX(-45deg);
-        text-align: center;
-
-        .react-after {
-          position: absolute;
-          top: 0;
-          right: -25px;
-          width: 50px;
-          height: 50px;
-          background-color: #0f1325;
-          transform: skewX(45deg);
-        }
-
-        .text {
-          display: inline-block;
-          transform: skew(45deg);
-        }
-      }
+    .bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center center;
     }
 
-    //第三行
-    .body-box {
-      margin-top: 26px;
-      display: grid;
-      grid-template-columns: 1fr 3fr 1fr;
+    .host-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 1rem; // 内边距用 rem
+      display: flex;
+      flex-direction: column;
 
-      .map-box {
-        height: 910px;
-        border: 1px solid yellow;
+      .decoration {
+
+        .dv-dec-10,
+        .dv-dec-10-s {
+          width: 32%;
+          height: 0.46vh;
+        }
+
+        .dv-dec-10-s {
+          transform: rotateY(180deg);
+        }
+
+        .dv-dec-8 {
+          width: 10.4vw;
+          height: 4.63vh;
+        }
+
+        .title {
+          width: 26vw;
+          height: 4.63vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          position: relative;
+
+          .title-text {
+            font-size: 1.5rem;
+            color: #fff;
+          }
+
+          .dv-dec-6 {
+            position: absolute;
+            width: 13vw;
+            height: 0.74vh;
+            bottom: -2.78vh;
+          }
+        }
+
+        // 第二行
+        .aside-width {
+          width: 40%;
+          color: white;
+
+          /* 左-平行四边形 */
+          .react-left {
+            margin-left: 1.4vh;
+            font-size: 1rem; // 配合 setRem 自适应
+            width: 9.4vw;
+            height: 4.63vh;
+            line-height: 4.63vh;
+            text-align: center;
+            transform: skewX(45deg);
+            background-color: #0f1325;
+            position: relative;
+
+            &.react-l-l {
+              margin-left: 2.5vw;
+              width: 26vw;
+              text-align: left;
+            }
+
+            .react-before {
+              position: absolute;
+              left: -2.5vw;
+              top: 0;
+              width: 5vw;
+              height: 4.63vh;
+              background-color: #0f1325;
+              transform: skewX(-45deg);
+            }
+
+            .text {
+              display: inline-block;
+              transform: skewX(-45deg);
+            }
+          }
+
+          /* 右-平行四边形 */
+          .react-right {
+            margin-left: 1.4vh;
+            font-size: 1rem; // 配合 setRem 自适应
+            width: 9.4vw;
+            height: 4.63vh;
+            line-height: 4.63vh;
+            text-align: center;
+            transform: skewX(-45deg);
+            background-color: #0f1325;
+            position: relative;
+
+            &.react-r-l {
+              width: 25.8vw;
+              text-align: right;
+            }
+
+            .react-after {
+              position: absolute;
+              top: 0;
+              right: -2.6vw;
+              width: 5vw;
+              height: 4.63vh;
+              background-color: #0f1325;
+              transform: skewX(45deg);
+            }
+
+            .text {
+              display: inline-block;
+              transform: skewX(45deg);
+            }
+          }
+
+        }
+      }
+
+      .body-box {
+        margin-top: 0.8vh;
+        display: grid;
+        grid-template-columns: 19.3% 61.4% 19.3%; // 百分比自适应
+        grid-auto-rows: 84.3%; // 百分比自适应
+        width: 100%;
+
+        .left-box,
+        .map-box,
+        .right-box {
+          width: 100%;
+          height: 87vh;
+
+          // background-color: green;
+        }
+
+        .map-box {
+          border: 0.1vw solid #2e6099;
+          margin-top: 0.3rem;
+          height: 86vh;
+        }
       }
     }
   }

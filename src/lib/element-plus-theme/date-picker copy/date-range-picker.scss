@@ -1,0 +1,138 @@
+@use '../mixins/mixins' as *;
+@use '../common/var' as *;
+@use '../mixins/var' as *;
+
+@include b(date-range-picker) {
+  @include set-component-css-var('datepicker', $datepicker);
+}
+
+@include b(date-range-picker) {
+  width: 40.375rem;
+
+  &.has-sidebar {
+    width: 47.25rem;
+  }
+
+  &.has-time .#{$namespace}-picker-panel__body-wrapper {
+    position: relative;
+  }
+
+  table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .#{$namespace}-picker-panel__body {
+    min-width: 32.0625rem;
+  }
+
+  .#{$namespace}-picker-panel__content {
+    margin: 0;
+  }
+
+  @include e(header) {
+    position: relative;
+    text-align: center;
+    height: 1.75rem;
+
+    [class*='arrow-left'] {
+      float: left;
+    }
+
+    [class*='arrow-right'] {
+      float: right;
+    }
+
+    div {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-right: 3.125rem;
+    }
+  }
+
+  @include e(header-label) {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0 .3125rem;
+    line-height: 1.375rem;
+    text-align: center;
+    cursor: pointer;
+    color: getCssVar('text-color', 'regular');
+
+    &:hover {
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &:focus-visible {
+      outline: none;
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &.active {
+      color: getCssVar('datepicker-active-color');
+    }
+  }
+
+  @include e(content) {
+    float: left;
+    width: 50%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 1rem;
+
+    @include when(left) {
+      border-right: .0625rem solid getCssVar('datepicker-inner-border-color');
+    }
+
+    .#{$namespace}-date-range-picker__header {
+      div {
+        margin-left: 3.125rem;
+        margin-right: 3.125rem;
+      }
+    }
+  }
+
+  @include e(editors-wrap) {
+    box-sizing: border-box;
+    display: table-cell;
+
+    @include when(right) {
+      text-align: right;
+    }
+  }
+
+  @include e(time-header) {
+    position: relative;
+    border-bottom: .0625rem solid getCssVar('datepicker-inner-border-color');
+    font-size: .75rem;
+    padding: .5rem .3125rem .3125rem .3125rem;
+    display: table;
+    width: 100%;
+    box-sizing: border-box;
+
+    >.#{$namespace}-icon-arrow-right {
+      font-size: 1.25rem;
+      vertical-align: middle;
+      display: table-cell;
+      color: getCssVar('datepicker-icon-color');
+    }
+  }
+
+  @include e(time-picker-wrap) {
+    position: relative;
+    display: table-cell;
+    padding: 0 .3125rem;
+
+    .#{$namespace}-picker-panel {
+      position: absolute;
+      top: .8125rem;
+      right: 0;
+      z-index: 1;
+      background: $color-white;
+    }
+
+    .#{$namespace}-time-panel {
+      position: absolute;
+    }
+  }
+}

@@ -1,0 +1,122 @@
+.divlabel-container {
+  //弹窗的位置由pinBuilder的位置决定 在infoPopup文件里 用screenPos定位
+  user-select: none;
+
+  // -------  目的地主题  -------
+  &.theme-destination {
+    background: linear-gradient(45deg, // 更亮更浅
+        rgba(0, 230, 255, 0.28) 0%,
+        rgba(56, 225, 255, 0.20) 100%);
+    box-shadow:
+      inset 0 0 8px rgba(56, 225, 255, 0.55),
+      0 0 12px rgba(56, 225, 255, 0.38);
+  }
+
+  // -------  外卖店主题  -------
+  &.theme-takeaway {
+    background: linear-gradient(225deg, // 反向+更深
+        rgba(0, 150, 255, 0.25) 0%,
+        rgba(0, 90, 200, 0.18) 100%);
+    box-shadow:
+      inset 0 0 8px rgba(0, 150, 255, 0.50),
+      0 0 12px rgba(0, 150, 255, 0.35);
+  }
+
+  // -------  默认 / 其他  -------
+  &.theme-default {
+    background: linear-gradient(135deg,
+        rgba(56, 225, 255, 0.22) 0%,
+        rgba(0, 150, 255, 0.15) 100%);
+    box-shadow:
+      inset 0 0 8px rgba(56, 225, 255, 0.5),
+      0 0 12px rgba(56, 225, 255, 0.3);
+  }
+
+  .animate-maker-border {
+    max-width: 260px;
+    padding: 1rem;
+    color: #38e1ff;
+    // box-shadow:
+    // inset 0 0 8px rgba(56, 225, 255, 0.6),
+    // 0 0 12px rgba(56, 225, 255, 0.5);
+    border-radius: 6px;
+    // background-color: rgba(0, 50, 80, 0.35);
+    backdrop-filter: blur(1px); //背景模糊
+
+    .head {
+      text-align: center;
+
+      .animate-marker__text {
+        position: relative;
+        top: -0.5rem;
+        font-size: 18px;
+        color: #fff;
+        font-weight: bold;
+        text-shadow:
+          0 0 6px #38e1ff,
+          0 0 12px #0ff;
+        animation: glowText 2s ease-in-out infinite alternate;
+
+        @keyframes glowText {
+
+          //字体呼吸效果
+          from {
+            text-shadow:
+              0 0 4px #38e1ff,
+              0 0 8px #0ff;
+            color: #c8f8ff;
+          }
+
+          to {
+            text-shadow:
+              0 0 10px #38e1ff,
+              0 0 20px #0ff;
+            color: #ffffff;
+          }
+        }
+      }
+
+      .close-btn {
+        pointer-events: auto;
+        cursor: pointer;
+        display: inline-block;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        text-align: center;
+        font-size: 12px;
+        font-weight: bold;
+        color: #fff;
+        background-color: rgba(98, 230, 212, 0.3);
+        transition: all 0.3s ease; //让颜色变化平缓一点 不要那么突然 
+
+        &:hover {
+          background-color: rgba(75, 210, 230, 0.822);
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    .body {
+      .label {
+        font-weight: bold;
+      }
+
+      .val {
+        color: #fff;
+      }
+
+      .link {
+        color: #93edff;
+        word-break: break-all;
+        word-wrap: break-word;
+        max-width: 100%;
+        cursor: pointer;
+      }
+    }
+  }
+
+}

@@ -4,7 +4,7 @@ import {
   type Point,
   type MultiPolygon,
 } from '@/interface/globalInterface';
-import { multiCenter } from '@/utils/getFeaturesCenter';
+import { multiPolyCenter } from '@/utils/getFeaturesCenter';
 import * as Cesium from 'cesium';
 export async function drawPolygon(viewer: Cesium.Viewer) {
   const features = await getHKWFS();
@@ -23,7 +23,7 @@ export async function drawPolygon(viewer: Cesium.Viewer) {
     multiPolygon.push(...f.geometry.coordinates);
   });
   //获取多个多边形的质心 3.获取质心
-  const multiCen = multiCenter(multiPolygon);
+  const multiCen = multiPolyCenter(multiPolygon);
 
   //1.处理坐标 1.2笛卡尔3
   const Car3: Cesium.Cartesian3[][] = [];

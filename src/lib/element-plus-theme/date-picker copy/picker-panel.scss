@@ -1,0 +1,131 @@
+@use '../mixins/mixins' as *;
+@use '../common/var' as *;
+
+@include b(picker-panel) {
+  color: getCssVar('text-color', 'regular');
+  background: getCssVar('bg-color', 'overlay');
+  border-radius: getCssVarWithDefault(('popper', 'border-radius'),
+      getCssVar('border-radius-base'));
+  line-height: 1.875rem;
+
+  .#{$namespace}-time-panel {
+    margin: .3125rem 0;
+    border: solid .0625rem getCssVar('datepicker-border-color');
+    background-color: getCssVar('bg-color', 'overlay');
+    box-shadow: getCssVar('box-shadow-light');
+  }
+
+  @include e((body, body-wrapper)) {
+    &::after {
+      content: '';
+      display: table;
+      clear: both;
+    }
+  }
+
+  @include e(content) {
+    position: relative;
+    margin: .9375rem;
+  }
+
+  @include e(footer) {
+    border-top: .0625rem solid getCssVar('datepicker-inner-border-color');
+    padding: .25rem .75rem;
+    text-align: right;
+    background-color: getCssVar('bg-color', 'overlay');
+    position: relative;
+    font-size: 0;
+  }
+
+  @include e(shortcut) {
+    display: block;
+    width: 100%;
+    border: 0;
+    background-color: transparent;
+    line-height: 1.75rem;
+    font-size: .875rem;
+    color: getCssVar('datepicker-text-color');
+    padding-left: .75rem;
+    text-align: left;
+    outline: none;
+    cursor: pointer;
+
+    &:hover {
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &.active {
+      background-color: #e6f1fe;
+      color: getCssVar('datepicker-active-color');
+    }
+  }
+
+  @include e(btn) {
+    border: .0625rem solid getCssVar('fill-color', 'darker');
+    color: getCssVar('text-color', 'primary');
+    line-height: 1.5rem;
+    border-radius: .125rem;
+    padding: 0 1.25rem;
+    cursor: pointer;
+    background-color: transparent;
+    outline: none;
+    font-size: .75rem;
+
+    &[disabled] {
+      color: getCssVar('text-color', 'disabled');
+      cursor: not-allowed;
+    }
+  }
+
+  @include e(icon-btn) {
+    font-size: .75rem;
+    color: getCssVar('datepicker-icon-color');
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+    margin-top: .5rem;
+
+    &:hover {
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &:focus-visible {
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    @include when(disabled) {
+      color: getCssVar('text-color-disabled');
+
+      &:hover {
+        cursor: not-allowed;
+      }
+    }
+
+    & .#{$namespace}-icon {
+      cursor: pointer;
+      font-size: inherit;
+    }
+  }
+
+  @include e(link-btn) {
+    vertical-align: middle;
+  }
+}
+
+.#{$namespace}-picker-panel *[slot='sidebar'],
+.#{$namespace}-picker-panel__sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6.875rem;
+  border-right: .0625rem solid getCssVar('datepicker-inner-border-color');
+  box-sizing: border-box;
+  padding-top: .375rem;
+  overflow: auto;
+}
+
+.#{$namespace}-picker-panel *[slot='sidebar']+.#{$namespace}-picker-panel__body,
+.#{$namespace}-picker-panel__sidebar+.#{$namespace}-picker-panel__body {
+  margin-left: 6.875rem;
+}

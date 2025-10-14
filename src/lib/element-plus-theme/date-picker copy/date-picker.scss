@@ -1,0 +1,111 @@
+@use '../common/var' as *;
+@use '../mixins/mixins' as *;
+@use '../mixins/var' as *;
+@use './picker-panel.scss';
+
+@include b(date-picker) {
+  @include set-component-css-var('datepicker', $datepicker);
+}
+
+@include b(date-picker) {
+  width: 20.125rem;
+
+  &.has-sidebar.has-time {
+    width: 27.125rem;
+  }
+
+  &.has-sidebar {
+    width: 27.375rem;
+  }
+
+  &.has-time .#{$namespace}-picker-panel__body-wrapper {
+    position: relative;
+  }
+
+  .#{$namespace}-picker-panel__content {
+    width: 18.25rem;
+  }
+
+  table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  @include e(editor-wrap) {
+    position: relative;
+    display: table-cell;
+    padding: 0 .3125rem;
+  }
+
+  @include e(time-header) {
+    position: relative;
+    border-bottom: .0625rem solid getCssVar('datepicker-inner-border-color');
+    font-size: .75rem;
+    padding: .5rem .3125rem .3125rem;
+    display: table;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @include e(header) {
+    padding: .75rem .75rem 0;
+    text-align: center;
+
+    @include m(bordered) {
+      margin-bottom: 0;
+      padding-bottom: .75rem;
+      border-bottom: solid .0625rem getCssVar('border-color-lighter');
+
+      &+.#{$namespace}-picker-panel__content {
+        margin-top: 0;
+      }
+    }
+  }
+
+  @include e(header-label) {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0 .3125rem;
+    line-height: 1.375rem;
+    text-align: center;
+    cursor: pointer;
+    color: getCssVar('text-color', 'regular');
+
+    &:hover {
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &:focus-visible {
+      outline: none;
+      color: getCssVar('datepicker-hover-text-color');
+    }
+
+    &.active {
+      color: getCssVar('datepicker-active-color');
+    }
+  }
+
+  @include e(prev-btn) {
+    float: left;
+  }
+
+  @include e(next-btn) {
+    float: right;
+  }
+
+  @include e(time-wrap) {
+    padding: .625rem;
+    text-align: center;
+  }
+
+  @include e(time-label) {
+    float: left;
+    cursor: pointer;
+    line-height: 1.875rem;
+    margin-left: .625rem;
+  }
+
+  .#{$namespace}-time-panel {
+    position: absolute;
+  }
+}

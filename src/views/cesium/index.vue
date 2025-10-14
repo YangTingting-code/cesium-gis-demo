@@ -1,5 +1,6 @@
 <template>
   <div class="map-wrapper">
+    <!-- <test /> -->
     <cesiumMap ref="viewerRef" />
     <changeLayers
       class="layer-control"
@@ -12,6 +13,7 @@
 import { ref } from 'vue';
 import cesiumMap from './CesiumViewer.vue';
 import changeLayers from './loaders/changeLayers.vue';
+// import test from './takeaway/index.vue'
 //导入底图
 import {
   img_tdt,
@@ -59,8 +61,8 @@ function switchLayer(type: string) {
   width: 100%;
   .layer-control {
     position: absolute;
-    right: 46px;
-    top: 7px;
+    right: .4375rem;
+    top: .4375rem;
   }
 }
 </style>

@@ -1,0 +1,33 @@
+@use '../mixins/mixins' as *;
+@use '../common/var' as *;
+
+@include b(time-range-picker) {
+  width: 22.125rem;
+  overflow: visible;
+
+  @include e(content) {
+    position: relative;
+    text-align: center;
+    padding: .625rem;
+    z-index: 1;
+  }
+
+  @include e(cell) {
+    box-sizing: border-box;
+    margin: 0;
+    padding: .25rem .4375rem .4375rem;
+    width: 50%;
+    display: inline-block;
+  }
+
+  @include e(header) {
+    margin-bottom: .3125rem;
+    text-align: center;
+    font-size: .875rem;
+  }
+
+  @include e(body) {
+    border-radius: .125rem;
+    border: .0625rem solid getCssVar('datepicker-border-color');
+  }
+}

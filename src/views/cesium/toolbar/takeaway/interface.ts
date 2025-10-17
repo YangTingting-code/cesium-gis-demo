@@ -114,3 +114,9 @@ export type Milestone = {
   orderId: string | null,
   cumDistance: number //累计里程
 }
+
+export interface combinedorderControl {
+  currentRegion: string,
+  currentRiderIdx: number,
+  currentTimeslot: number
+} 

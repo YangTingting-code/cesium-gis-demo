@@ -52,17 +52,16 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { mapboxPicUrl } from '@/data/layersData';
+import { mapboxPicUrl, mapboxData } from '@/data/layersData';
+import {useMapboxStyleStore} from '@/store/mapStyleStore'
+
+//底图风格Store 
+const mapboxStyleStore = useMapboxStyleStore()
 //控制进入离开状态
 const isHover = ref(false);
 const isClicked = ref(false);
 const {
-  mapbox_navigation_night,
-  mapbox_navigation_day,
-  mapbox_streets,
-  mapbox_outdoors,
-  mapbox_light,
-  mapbox_dark,
+  mapbox_navigation_night
 } = mapboxPicUrl;
 // 定义一个类型
 interface MapboxStyle {
@@ -70,38 +69,7 @@ interface MapboxStyle {
   description: string;
   url: string;
 }
-const mapboxData = [
-  {
-    mapboxId: 'mapbox_navigation_night',
-    description: '夜间导航',
-    url: mapbox_navigation_night,
-  },
-  {
-    mapboxId: 'mapbox_navigation_day',
-    description: '日间导航',
-    url: mapbox_navigation_day,
-  },
-  {
-    mapboxId: 'mapbox_streets',
-    description: '街道',
-    url: mapbox_streets,
-  },
-  {
-    mapboxId: 'mapbox_outdoors',
-    description: '户外',
-    url: mapbox_outdoors,
-  },
-  {
-    mapboxId: 'mapbox_light',
-    description: '浅色系',
-    url: mapbox_light,
-  },
-  {
-    mapboxId: 'mapbox_dark',
-    description: '深色系',
-    url: mapbox_dark,
-  },
-];
+
 const mapboxStyle = reactive<MapboxStyle[]>([]);
 mapboxData.forEach((e) => {
   mapboxStyle.push({
@@ -123,7 +91,7 @@ let currentStyleId = ref();
 let currentIndex = ref(0);
 const emit = defineEmits<{ changeLayer: [stringId: string] }>();
 function selectLayer(e: MouseEvent) {
-  const item = (e.target as HTMLElement).closest('.item');
+  const item = (e.target as HTMLElement).closest('.item') as HTMLElement
   //这是btn写法
   // const btn = (e.target as HTMLElement).closest('button[data-url]')
   //点击的不是按钮就返回
@@ -131,7 +99,7 @@ function selectLayer(e: MouseEvent) {
   const url = item.dataset.url;
   const id = item.dataset.styleid;
   //点击的是同样的就返回
-  if (currentBG.value === url) return;
+  if (currentBG.value === url || !url || !id) return;
   // 给当前选择的item弄上加上边框和阴影
   const index = Array.from((item.parentNode as HTMLElement).children).indexOf(
     item
@@ -144,6 +112,9 @@ function selectLayer(e: MouseEvent) {
   currentStyleId.value = id;
   // 子传父 父自定义函数
   emit('changeLayer', id);
+
+  //更新此时的图层id
+  mapboxStyleStore.updateId(id)
 }
 </script>
 

@@ -2,10 +2,10 @@
   <div class="map-wrapper">
     <!-- <test /> -->
     <cesiumMap ref="viewerRef" />
-    <changeLayers
+    <!-- <changeLayers
       class="layer-control"
       @change-layer="switchLayer"
-    />
+    /> -->
   </div>
 </template>
 

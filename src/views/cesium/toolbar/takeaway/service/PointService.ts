@@ -137,7 +137,7 @@ export class PointService {
 
   private initAction() {
     this.bindLeftDownAction()
-    this.setupVisibilityWatcher()//先测试监听某一个pin
+    // this.setupVisibilityWatcher()//先测试监听某一个pin
     // this.setupVisibilityWatcher([this.pickupIds[0]])//先测试监听某一个pin
     // this.bindMoveAction()
   }

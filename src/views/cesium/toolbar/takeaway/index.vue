@@ -54,7 +54,6 @@ import { ref, onMounted, inject, watch } from 'vue'
 import type { Ref } from 'vue'
 import {SceneStateManager} from './service/SceneStateManager'
 import {useSceneStore} from './store/sceneStore'
-// import {useOrderStore} from '@/views/rightPanel/top/store/orderStore'
 
 import * as Cesium from 'cesium'
 
@@ -201,7 +200,17 @@ const updateAnimationState = () => {
 }
 
 const serviceClear = ()=>{
+  //-----先把时钟恢复成东八区当前时间
+  const {animationService} = sceneStateManager.getServices()
+  if(!animationService){
+    console.log('动画服务没有准备好 无法重置时钟')
+    return
+  }
+  animationService.resetClock()
+  //-----先把时钟恢复成东八区当前时间
+
   sceneStateManager.clear()
+
 }
 
 // 定期更新状态

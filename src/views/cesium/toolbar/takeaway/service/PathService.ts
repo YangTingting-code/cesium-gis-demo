@@ -461,7 +461,8 @@ export class PathService {
 
 
   public recreatRiderModel(riderPos: Cesium.Cartesian3, riderOri: Cesium.Quaternion) {//数据回显重建骑手模型
-    this.riderPosition = riderPos
+    // this.riderPosition = riderPos //这里一个
+    this.riderPosition = Cesium.Cartesian3.clone(riderPos)
     this.orientation = riderOri
     // modelService 可能被 clear() 清空，这里补建
     if (!this.modelService) {

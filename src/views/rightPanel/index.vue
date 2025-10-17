@@ -21,7 +21,8 @@ import pathMap  from './bottom/index.vue'
   height: 45vh;
   width: 92%;
   border-radius: 10px;
-  border: 1px solid rgb(19, 244, 237);
+  // border: 1px solid rgb(19, 244, 237);
+  
 }
 .bottom-panel{
   margin-top: 5px;

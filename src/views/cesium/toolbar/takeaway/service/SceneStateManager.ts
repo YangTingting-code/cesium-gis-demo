@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { getSequOrders } from '../utils/sequOrders'
 import { registerServices, clearServices } from './GlobalServices'
 import { useOrderStore } from '@/views/rightPanel/top/store/orderStore'
-
+import { useCombinedControlStore } from '@/store/combinedControlStore'
 export class SceneStateManager {
   private viewer: Cesium.Viewer
   private animationService: AnimationService | null = null
@@ -61,8 +61,17 @@ export class SceneStateManager {
 
   //第三步：根据时间段 和 区域 加载骑手数据
   public async loadRiderDataByRegionTime(region: string, timeslot: number) {
-    const orderStore = new OrderStore()
 
+    this.combinedorderControl = JSON.parse(localStorage.getItem('combinedorderControl') || '{}') //更新一下数据 因为可能索引号超过了 在订单面板组件层修改了索引号 但是这里的索引号还是旧的 旧的依旧会覆盖
+    const orderStore = new OrderStore()
+    const combinedOrdersIds = await orderStore.getRiderIdsByRegionTimeslot(this.combinedorderControl.currentRegion, timeslot)
+    const lastIdx = combinedOrdersIds.length - 1
+
+    if (this.currentRiderIdx > lastIdx) {
+      this.currentRiderIdx = lastIdx //更新骑手索引
+    }
+
+    //清除上一时段的数据
     const riderids_combined = await orderStore.getRiderIdsByRegionTimeslot(region, timeslot)
     if (riderids_combined.length === 0) {
       console.log('获取组合订单的key失败')
@@ -74,6 +83,7 @@ export class SceneStateManager {
     Object.assign(this.combinedorderControl, {
       currentTimeslot: timeslot,
       currentRegion: region,
+      currentRiderIdx: this.currentRiderIdx
     })
 
     localStorage.setItem('combinedorderControl', JSON.stringify(this.combinedorderControl))
@@ -89,10 +99,18 @@ export class SceneStateManager {
     // this.startGlobalStatusTimer()
     //开始订单轮询 定时调用 switchRider
     const riderPosOri = JSON.parse(localStorage.getItem('riderPosOri') || 'null')
+
     if (!riderPosOri) { //刷新之后本地没有存储需要回显的数据的话 开启轮询
+
       if (this.intervalNumber) return
       this.intervalNumber = setInterval(async () => {
+
         await this.switchRider()
+
+        //通知下面的二维路径更新数据
+        const combinedControlStore = useCombinedControlStore()
+        combinedControlStore.updateStatus()
+
       }, 5000);
     }
   }
@@ -213,6 +231,7 @@ export class SceneStateManager {
     this.order0StartIso = `${today}${timeIso}`
 
     //准备 排好序的订单 SequOrders
+    console.log(comOrSeg.combinedOrder)
     const orders: DeliveryOrder[] = await orderStore.getOrdersByCombinedOrder(region, timeslot, comOrSeg.combinedOrder)
 
     const sequOrders = await getSequOrders(orders, comOrSeg.combinedOrder) //订单按照取餐顺序排序

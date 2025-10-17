@@ -14,6 +14,7 @@ export const useOrderStore = defineStore('order', {
       '第二单': '赶往商家',
       '第三单': '赶往商家',
     } as Record<string, string>, //每单的状态
+    currentUpdateOrder: {} as Record<string, string>,
     sequLngLatPickDrop: {} as Record<string, Record<string, number[]>>, //每单的取餐送餐坐标
 
   }),
@@ -41,6 +42,10 @@ export const useOrderStore = defineStore('order', {
     },
     getStatus() {
       return this.orderStatusMap
+    },
+
+    getUpdatedOrder() {
+      return this.currentUpdateOrder
     },
 
     saveSequOrders(sequOrders: DeliveryOrder[]) {
@@ -83,6 +88,8 @@ export const useOrderStore = defineStore('order', {
 
     setStatusByKey(statusKey: string, status: string) {
       this.orderStatusMap[statusKey] = status
+      this.currentUpdateOrder['orderId'] = statusKey
+      this.currentUpdateOrder['orderStatus'] = status
     },
 
   }

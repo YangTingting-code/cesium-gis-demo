@@ -2,7 +2,7 @@ import * as Cesium from 'cesium'
 import type { DeliveryOrder, SegmentType, Milestone } from '../interface'
 import { useBucketStore } from '../store/bucketStore'
 import { useOrderStore } from '@/views/rightPanel/top/store/orderStore'
-import { toRaw } from 'vue'
+
 export class AnimationService {
   private viewer: Cesium.Viewer
   private pathService: any
@@ -302,6 +302,29 @@ export class AnimationService {
     this.viewer.timeline.zoomTo(startTime, stopTime)
   }
 
+  //清除骑手轨迹之后时钟恢复到本机时间
+  //销毁时调用
+  public resetClock() {
+    //获取本地时间
+    // const now = new Date()
+    const startTime = Cesium.JulianDate.now()
+
+    //设置默认范围
+    const stopTime = Cesium.JulianDate.addDays(startTime, 1, new Cesium.JulianDate())
+
+    const clock = this.viewer.clock
+
+    clock.startTime = startTime.clone()
+    clock.stopTime = stopTime.clone()
+    clock.currentTime = startTime.clone()
+
+    clock.clockRange = Cesium.ClockRange.UNBOUNDED //Clock#tick 将始终沿当前方向推进时钟。
+    clock.multiplier = 1
+    clock.shouldAnimate = true
+
+    this.viewer.timeline.zoomTo(startTime, stopTime)
+  }
+
   /**
    * 暂停动画
    */
@@ -442,6 +465,7 @@ export class AnimationService {
     // 可以在这里添加动画完成后的处理逻辑
     // 例如：显示完成提示、自动开始下一个动画等
   }
+
 
   /**
    * 销毁服务，清理资源

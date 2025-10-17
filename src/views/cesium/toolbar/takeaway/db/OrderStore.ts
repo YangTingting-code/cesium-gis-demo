@@ -109,7 +109,6 @@ export class OrderStore {
     const subOrdersId: string[] = []
     const subKey: string[] = []
     const orderGroup: DeliveryOrder[] = []
-
     combinedOrder.subOrders.forEach(subOrder => {
       subOrdersId.push(subOrder.orderId)
     })

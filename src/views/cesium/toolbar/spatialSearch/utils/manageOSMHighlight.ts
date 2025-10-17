@@ -44,6 +44,9 @@ export function createHighlightManager(tileset: Cesium.Cesium3DTileset) {
     });
   }
 
+
+
+
   return {
     /**
      * 批量设置高亮

@@ -26,6 +26,8 @@ export async function createViewer(container: string | HTMLElement) {
     geocoder: false,
     navigationHelpButton: false
   });
+
+
   (viewer.timeline as any).makeLabel = function (time: any) {
     return Cesium.JulianDate.toDate(time).toLocaleString('zh-CN', {
       hour12: false,
@@ -38,16 +40,10 @@ export async function createViewer(container: string | HTMLElement) {
       timeZone: 'Asia/Shanghai'
     })
   }
-  // as any).makeLabel = function (time: any) {
-  //   return Cesium.JulianDate.toDate(time).toLocaleString('zh-CN', {
-  //     hour12: false,
-  //     timeZone: 'Asia/Shanghai'
-  //   })
-  // }
-
   // 隐藏版权信息
   viewer._cesiumWidget._creditContainer.style.display = "none"; //存在
 
+  modifyMap(viewer)
 
   viewer.entities.add(area);
   const line3D = await createLine3D(cartographic);
@@ -71,4 +67,36 @@ export async function createViewer(container: string | HTMLElement) {
   //空间查询高亮建筑
 
   return viewer;
+}
+
+function modifyMap(viewer: Cesium.Viewer) {
+  //获取底图影像图层
+  const baseLayer: any = viewer.imageryLayers.get(0)
+
+  //定义两个属性来控制是否反向
+  baseLayer.invertColor = true
+  baseLayer.filterRGB = [0, 50, 100]
+
+  //   更改底图着色器的代码
+  const baseFragmentShader = viewer.scene.globe._surfaceShaderSet.baseFragmentShaderSource.sources
+  // 关键: 反色+过滤
+  // 通常只修改最后一个（第 3 个）
+  const lastIndex = baseFragmentShader.length - 1;
+  const strS = "color = czm_saturation(color, textureSaturation);\n#endif\n";
+  let strT = "color = czm_saturation(color, textureSaturation);\n#endif\n";
+
+  // [0,50,100] 过滤
+
+  // === 插入自定义颜色逻辑 ===
+  strT += `
+    color.r = 1.0 - color.r;
+    color.g = 1.0 - color.g;
+    color.b = 1.0 - color.b;
+    color.r *= 0.0 / 255.0;
+    color.g *= 50.0 / 255.0;
+    color.b *= 100.0 / 255.0;
+  `;
+
+  baseFragmentShader[lastIndex] = baseFragmentShader[lastIndex].replace(strS, strT);
+
 }

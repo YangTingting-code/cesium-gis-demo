@@ -1,5 +1,4 @@
 <template>
-  <h1>人流环比图</h1>
   <chart />
 </template>
 

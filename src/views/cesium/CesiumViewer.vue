@@ -35,9 +35,10 @@ onMounted(async () => {
   //创建viewer
   viewerRef.value = await createViewer('cesiumContainer');
   //添加mapbox底图
-  viewerRef.value.scene.imageryLayers.addImageryProvider(
-    mapbox_navigation_night
-  );
+  //暂时注释掉 测试反向过滤
+  // viewerRef.value.scene.imageryLayers.addImageryProvider(
+  //   mapbox_navigation_night //不会存储上一次的样式 每次默认用这个夜间导航底图
+  // );
   //加载osm 3dbuilding
   tilesetRef.value = await loadOSMBuildings(viewerRef.value)
 

@@ -82,7 +82,12 @@ import {useOrderStore} from './store/orderStore'
 import {useSceneStore} from '@/views/cesium/toolbar/takeaway/store/sceneStore'
 import {useCombinedControlStore } from '@/store/combinedControlStore'
 
-import type {SceneStateManager} from '@/views/cesium/toolbar/takeaway/service/SceneStateManager'
+import type {SceneStateManager} from '@/service/cesium/takeaway/SceneManage/SceneStateManager'
+import {ScenePersistence} from '@/service/cesium/takeaway/SceneManage/ScenePersistence'
+import {useSceneLifecycle} from '@/composables/cesium/takeaway/useSceneLifecycle'
+
+let initScene :(region:string,timeslot:number)=>Promise<void>
+let switchRider:()=>Promise<void>
 
 const orderStorePinia = useOrderStore()
 const combinedControlStore = useCombinedControlStore()
@@ -124,6 +129,8 @@ const combinedorderControl = JSON.parse(localStorage.getItem('combinedorderContr
 const localTimeslot:number = combinedorderControl.currentTimeslot
 const currentSlotKey = ref(timeslot2slotkey[localTimeslot]) //默认选择10-14点
 
+let timeoutId : number | null = null
+
 //不接收 viewer 创建新的状态管理实例 因为在 takeaway/index.vue里面也会创建一个新的状态管理实例 两个数据不共享 不要重新创建
 // 用 pinia 管理 但是不要直接把状态管理实例存成响应式的 会卡到爆炸 存成普通变量 用一个旗帜做标记 获取实例需要watch 那个旗帜 旗帜变化且变为true的时候说明 状态实例已存入 此时外界可以获取
 const sceneStore = useSceneStore()
@@ -143,7 +150,13 @@ watch(()=>sceneStore.isReady,async (ready)=>{
 
       await orderStore.prepareData(combinedorderControl.currentRegion,9,3) */
 
-      sceneManager.loadRiderDataByRegionTime(combinedorderControl.currentRegion,localTimeslot)
+      const fns = useSceneLifecycle(sceneManager)
+      initScene = fns.initScene
+      switchRider = fns.switchRider
+
+      initScene(combinedorderControl.currentRegion,localTimeslot)
+      // sceneManager.initializeOrders(combinedorderControl.currentRegion,localTimeslot)
+
     }else{
       console.warn('SceneManager 仍为空')
     }
@@ -174,11 +187,33 @@ watch(currentSlotKey,async (newValue)=>{
       if(timeoutChanged)
         clearTimeout(timeoutChanged)
     },600);
+
+    //面板订单切换
+    // const {switchRider} = useSceneLifecycle(sceneManager)
+    switchRider() 
+    //清除轮询
+    sceneStore.stopPolling()
+    startLater(2000)
+
   }
 
-  
-  
+
 })
+
+function startLater(timeoutMS = 5000){
+  //5s之后再次开始轮询
+  if(!sceneStore.timeoutId && !ScenePersistence.getIsPath()){
+    timeoutId = setTimeout(() => {
+      if(sceneStore.timeoutId){ //如果此时的延时器没有被清除 可以重新开始轮询 并且清除这个延时器
+        sceneStore.startPolling() 
+        sceneStore.updateTimeoutId(null)
+      }
+      //如果此时的延时器被清除了呢? 就不会开启轮询 延时器已被清除过一次 不用再次被清除
+    }, (timeoutMS));
+  
+    sceneStore.updateTimeoutId(timeoutId)
+  }
+}
 
 //根据状态添加相应的类
 function statusClass(status:string){
@@ -221,8 +256,14 @@ function changeOrder(){
     console.log('此时状态管理实例还没有准备好')
     return
   }
-  sceneManager.clearInterval() //取消轮询
-  sceneManager.switchRider()
+
+  //清除轮询
+  sceneStore.stopPolling()
+
+  startLater(2000)
+
+  switchRider() 
+
   combinedControlStore.updateStatus()
 
   //添加
@@ -234,15 +275,20 @@ function changeOrder(){
     if(timeoutChanged)
       clearTimeout(timeoutChanged)
   },600);
+
 }
 
 onUnmounted(()=>{
-  //清除轮询定时器
-  sceneManager?.clearInterval()
   if(timeoutNumber)
     clearTimeout(timeoutNumber)
   if(timeoutChanged)
     clearTimeout(timeoutChanged)
+
+  //清除延时器
+  if(timeoutId){
+    sceneStore.clearTimeout()
+    timeoutId = null
+  } 
 })
 
 

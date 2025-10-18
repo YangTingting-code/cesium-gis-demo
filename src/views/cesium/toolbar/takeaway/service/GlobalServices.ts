@@ -11,9 +11,9 @@ export const GlobalServices = {
 
 //提供初始化注册函数
 export function registerServices(services: {
-  pathService: PathService,
-  animationService: AnimationService,
-  pointService: PointService,
+  pathService: PathService | null,
+  animationService: AnimationService | null,
+  pointService: PointService | null,
 }) {
   GlobalServices.pathService = services.pathService
   GlobalServices.animationService = services.animationService

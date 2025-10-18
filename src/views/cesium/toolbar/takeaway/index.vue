@@ -52,8 +52,11 @@
 <script lang="ts" setup>
 import { ref, onMounted, inject, watch } from 'vue'
 import type { Ref } from 'vue'
-import {SceneStateManager} from './service/SceneStateManager'
+import {SceneStateManager} from '@/service/cesium/takeaway/SceneManage/SceneStateManager'
 import {useSceneStore} from './store/sceneStore'
+import {createRiderController} from '@/composables/cesium/takeaway/createRiderController'
+import {ScenePersistence} from '@/service/cesium/takeaway/SceneManage/ScenePersistence'
+import {ClockController} from '@/service/cesium/takeaway/AnimationManage/ClockController'
 
 import * as Cesium from 'cesium'
 
@@ -64,6 +67,8 @@ interface CesiumInjection {
 }
 
 let sceneStateManager : SceneStateManager
+let clockController : ClockController
+
 let isFollow = false
 //管理订单面板状态
 const sceneStore = useSceneStore()
@@ -75,23 +80,20 @@ const { viewerRef, isReady } = inject<CesiumInjection>('cesium')!
 
 const animationState = ref<any>(null)
 
-watch(
-  [viewerRef, isReady],
-  async ([vRef, ready]) => {
-    if (ready && vRef) {
-      await initializeServices(vRef)
-    }
-  }
-)
-
 /**
  * 初始化服务
  */
 async function initializeServices(viewer: Cesium.Viewer) {
   sceneStateManager = new SceneStateManager(viewer)
   sceneStore.setManager(sceneStateManager) //保存到pinia store 方便订单面板管理
-  // await sceneStateManager.initialize() //?不要立马initialize吧？这个时候都没有数据
+  const res = createRiderController(sceneStateManager)
+  sceneStore.setPollingFns(res.startPolling,res.stopPolling)
 
+  //开启轮询
+  // 当前isPath为false时
+  if(!ScenePersistence.getIsPath()){
+    res.startPolling()
+  }
 }
 
 /**
@@ -153,22 +155,27 @@ const playAnimation = () => {
 
   startRiderAnimation()
   //取消订单面板轮询
-  sceneStateManager.clearInterval()
+  sceneStore.stopPolling()
+  // 清除 订单面板的延时器（startLater）
+  sceneStore.clearTimeout()
+
   //订单面板状态重置
   sceneStateManager.resetOrderControlStatus()
 }
 
 const pauseAnimation = () => {
-  const {animationService} = sceneStateManager.getServices()
-  if(animationService)
-    animationService.pauseAnimation()
+  // const {animationService} = sceneStateManager.getServices()
+  clockController.pauseAnimation()
+  // if(animationService)
+  //   animationService.pauseAnimation()
   updateAnimationState()
 }
 
 const resumeAnimation = () => {
-  const {animationService} = sceneStateManager.getServices()
-  if(animationService)
-    animationService.resumeAnimation()
+  clockController.resumeAnimation()
+  // const {animationService} = sceneStateManager.getServices()
+  // if(animationService)
+  //   animationService.resumeAnimation()
   updateAnimationState()
 }
 
@@ -206,23 +213,45 @@ const serviceClear = ()=>{
     console.log('动画服务没有准备好 无法重置时钟')
     return
   }
-  animationService.resetClock()
+  
+  clockController.resetClock()
+  // animationService.resetClock()
+
   //-----先把时钟恢复成东八区当前时间
 
   sceneStateManager.clear()
 
+
 }
+
+watch(
+    [viewerRef, isReady],
+    async ([vRef, ready]) => {
+      if (ready && vRef) {
+        
+        await initializeServices(vRef)
+
+        //创建时钟管理器
+        clockController = new ClockController(vRef)
+      }
+    },
+    {immediate:true}
+  )
+
 
 // 定期更新状态
 onMounted(() => {
-  if(sceneStateManager)
-    setInterval(updateAnimationState, 100)
+  
+  // if(sceneStateManager)
+  //   setInterval(updateAnimationState, 100)
 })
 
 // 组件卸载时清理资源
 import { onUnmounted } from 'vue'
 onUnmounted(() => {
   sceneStateManager.clear()
+  //停止轮询
+  sceneStore.stopPolling()
 })
 
 </script>
